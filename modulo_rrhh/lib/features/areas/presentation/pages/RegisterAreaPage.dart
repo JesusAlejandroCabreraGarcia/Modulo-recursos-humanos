@@ -1,5 +1,7 @@
+import 'dart:convert'; // Para convertir la lista a JSON
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterAreaPage extends StatefulWidget {
   const RegisterAreaPage({Key? key}) : super(key: key);
@@ -23,6 +25,33 @@ class _RegisterAreaPageState extends State<RegisterAreaPage> {
   final Color buttonColor = Colors.red; // Botón rojo
   final Color textColor = Colors.white; // Texto blanco
 
+  @override
+  void initState() {
+    super.initState();
+    _loadAreas(); // Cargar las áreas al iniciar
+  }
+
+  // Función para cargar las áreas desde SharedPreferences
+  Future<void> _loadAreas() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? areasData = prefs.getString('areas'); // Obtener los datos
+
+    if (areasData != null) {
+      final List<dynamic> decodedData = jsonDecode(areasData); // Decodificar JSON
+      setState(() {
+        areas.clear();
+        areas.addAll(decodedData.map((item) => Map<String, dynamic>.from(item)));
+      });
+    }
+  }
+
+  // Función para guardar las áreas en SharedPreferences
+  Future<void> _saveAreas() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String encodedData = jsonEncode(areas); // Convertir la lista a JSON
+    await prefs.setString('areas', encodedData); // Guardar los datos
+  }
+
   void _addArea() {
     // Fecha actual
     final now = DateTime.now();
@@ -40,6 +69,9 @@ class _RegisterAreaPageState extends State<RegisterAreaPage> {
         'Fecha_Actualizacion': formattedDate,
       });
     });
+
+    // Guardar las áreas en SharedPreferences
+    _saveAreas();
 
     // Limpiar campos después de registrar
     nombreController.clear();

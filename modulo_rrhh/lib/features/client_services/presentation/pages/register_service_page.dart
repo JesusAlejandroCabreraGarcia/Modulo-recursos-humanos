@@ -1,5 +1,7 @@
+import 'dart:convert'; // Para convertir la lista a JSON
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 class RegisterServicePage extends StatefulWidget {
   const RegisterServicePage({Key? key}) : super(key: key);
@@ -24,6 +26,33 @@ class _RegisterServicePageState extends State<RegisterServicePage> {
   final Color buttonColor = Colors.red; // Botón rojo
   final Color textColor = Colors.white; // Texto blanco
 
+  @override
+  void initState() {
+    super.initState();
+    _loadServices(); // Cargar los servicios al iniciar
+  }
+
+  // Función para cargar los servicios desde SharedPreferences
+  Future<void> _loadServices() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String? servicesData = prefs.getString('services'); // Obtener los datos
+
+    if (servicesData != null) {
+      final List<dynamic> decodedData = jsonDecode(servicesData); // Decodificar JSON
+      setState(() {
+        services.clear();
+        services.addAll(decodedData.map((item) => Map<String, dynamic>.from(item)));
+      });
+    }
+  }
+
+  // Función para guardar los servicios en SharedPreferences
+  Future<void> _saveServices() async {
+    final prefs = await SharedPreferences.getInstance();
+    final String encodedData = jsonEncode(services); // Convertir la lista a JSON
+    await prefs.setString('services', encodedData); // Guardar los datos
+  }
+
   void _addService() {
     // Fecha actual
     final now = DateTime.now();
@@ -42,6 +71,9 @@ class _RegisterServicePageState extends State<RegisterServicePage> {
         'Estatus': true, // Por defecto activo
       });
     });
+
+    // Guardar los servicios en SharedPreferences
+    _saveServices();
 
     // Limpiar campos después de registrar
     personaIdController.clear();
